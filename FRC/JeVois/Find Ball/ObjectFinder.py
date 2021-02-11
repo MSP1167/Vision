@@ -50,63 +50,51 @@ class ObjectFinder:
         # We are done with the input image:
         inframe.done()
 
+        # Ranges For Color
         Yellow_Lower = [10, 40, 100]
         Yellow_Upper = [50, 230, 255]
-
+        
+        # Need to convert the dtype for openCV
         lower = np.array(Yellow_Lower, dtype = "uint8")
         upper = np.array(Yellow_Upper, dtype = "uint8")
-
-        # Example of in-place processing:
-        #jevois.hFlipYUYV(outimg)
+        
+        # Get the raw img into a workable format
         src = jevois.convertToCvBGR(inimg)
         hsv = cv.cvtColor(src, cv.COLOR_BGR2HSV)
         
+        # Blur to help with edges
         blur = cv.GaussianBlur(hsv, (3, 3), 0)
         
+        # Mask it
         mask = cv.inRange(hsv, lower, upper)
         
+        # Find edges
         canny_edge = cv.Canny(mask, 100, 200)
         
+        # Find circles
         rows = canny_edge.shape[0]
         circles = cv.HoughCircles(canny_edge, cv.HOUGH_GRADIENT, 1, 100,
                                param1=100, param2=20,
                                minRadius=5, maxRadius=75)
-                               
+        
+        # Circles Are reported as (X, Y, Radius)
         jevois.LINFO("CIRCLES: {}".format(circles))
         if outimg is not None:
             if circles is not None:
                 circles = np.uint16(np.around(circles))
                 for i in circles[0, :]:
                     center = (i[0], i[1])
-                    #jevois.LINFO("TEST")
-                    #jevois.LINFO("CIRCLE at {}".format(center))
-                    centerx = i[0]
-                    centery = i[1]
                     # circle center
                     cv.circle(src, center, 1, (0, 100, 100), 3)
-                    #jevois.drawCircle(outimg, centerx, centery, 2, 1, 0)
                     # circle outline
                     radius = i[2]
                     cv.circle(src, center, radius, (255, 0, 255), 3)
-                    #jevois.drawCircle(outimg, centerx, centery, radius, 1, 0)
-        
-        # Example of simple drawings:
-        #jevois.drawCircle(outimg, int(outimg.width/2), int(outimg.height/2), int(outimg.height/4),
-        #                  2, jevois.YUYV.White)
-        #jevois.writeText(outimg, "Hi from Python - ObjectFinder", 20, 20, jevois.YUYV.White, jevois.Font.Font10x20)
-        
-        # Paste FPS onto img
-        #info = jevois.getSysInfoCPU
-        #jevois.writeText(outimg, center, 20, 20, jevois.YUYV.White, jevois.Font.Font10x20)
+
         # We are done with the output, ready to send it to host over USB:
-        #jevois.drawCircle(outimg, 10, 10, 1, 1, 0)
-        cv.circle(src, (20, 20), 20, (0, 100, 100), 3)
         jevois.convertCvBGRtoRawImage(src, outimg, 1)
         outframe.send()
-
-        # Send a string over serial (e.g., to an Arduino). Remember to tell the JeVois Engine to display those messages,
-        # as they are turned off by default. For example: 'setpar serout All' in the JeVois console:
-        jevois.sendSerial("DONE frame {}".format(self.frame))
+        
+        jevois.sendSerial("{}".format(circles))
         self.frame += 1
 
     # ###################################################################################################
