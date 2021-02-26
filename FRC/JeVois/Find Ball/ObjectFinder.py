@@ -25,6 +25,8 @@ class ObjectFinder:
     def __init__(self):
         jevois.LINFO("ObjectFinder Constructor")
         self.frame = 0 # a simple frame counter used to demonstrate sendSerial()
+        self.degrees = 320/90 # 320 Pixels, using a 90 Degree Camera lens
+        self.widthOuterBuffer = 320*0.45
 
     # ###################################################################################################
     ## Process function with no USB output
@@ -91,6 +93,12 @@ class ObjectFinder:
                     cv.circle(src, center, radius, (255, 0, 255), 3)
 
         # We are done with the output, ready to send it to host over USB:
+
+        cv.line(src, (int(self.widthOuterBuffer), 0), (int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
+        cv.line(src, (320 - int(self.widthOuterBuffer), 0), (320 - int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
+
+        
+
         jevois.convertCvBGRtoRawImage(src, outimg, 1)
         outframe.send()
         
