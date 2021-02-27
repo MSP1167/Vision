@@ -31,7 +31,74 @@ class ObjectFinder:
     # ###################################################################################################
     ## Process function with no USB output
     def processNoUSB(self, inframe):
-        jevois.LFATAL("process no usb not implemented")
+        # Get the next camera image (may block until it is captured):
+        inimg = inframe.get()
+        jevois.LINFO("Input image is {} {}x{}".format(jevois.fccstr(inimg.fmt), inimg.width, inimg.height))
+
+        # Get the next available USB output image:
+        #outimg = outframe.get()
+        #jevois.LINFO("Output image is {} {}x{}".format(jevois.fccstr(outimg.fmt), outimg.width, outimg.height))
+
+        # Example of getting pixel data from the input and copying to the output:
+        #jevois.paste(inimg, outimg, 0, 0)
+
+        # We are done with the input image:
+        inframe.done()
+
+        # Ranges For Color
+        Yellow_Lower = [10, 40, 100]
+        Yellow_Upper = [50, 230, 255]
+        
+        # Need to convert the dtype for openCV
+        lower = np.array(Yellow_Lower, dtype = "uint8")
+        upper = np.array(Yellow_Upper, dtype = "uint8")
+        
+        # Get the raw img into a workable format
+        src = jevois.convertToCvBGR(inimg)
+        hsv = cv.cvtColor(src, cv.COLOR_BGR2HSV)
+        
+        # Blur to help with edges
+        blur = cv.GaussianBlur(hsv, (3, 3), 0)
+        
+        # Mask it
+        mask = cv.inRange(hsv, lower, upper)
+        
+        # Find edges
+        canny_edge = cv.Canny(mask, 100, 200)
+        
+        # Find circles
+        rows = canny_edge.shape[0]
+        circles = cv.HoughCircles(canny_edge, cv.HOUGH_GRADIENT, 1, 100,
+                               param1=100, param2=20,
+                               minRadius=5, maxRadius=75)
+        
+        # Circles Are reported as (X, Y, Radius)
+        jevois.LINFO("CIRCLES: {}".format(circles))
+        #if outimg is not None:
+            #if circles is not None:
+                #circles = np.uint16(np.around(circles))
+                #for i in circles[0, :]:
+                    #center = (i[0], i[1])
+                    # circle center
+                    #cv.circle(src, center, 1, (0, 100, 100), 3)
+                    # circle outline
+                    #radius = i[2]
+                    #cv.circle(src, center, radius, (255, 0, 255), 3)
+
+        # We are done with the output, ready to send it to host over USB:
+
+        #cv.line(src, (int(self.widthOuterBuffer), 0), (int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
+        #cv.line(src, (320 - int(self.widthOuterBuffer), 0), (320 - int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
+
+        
+
+        #jevois.convertCvBGRtoRawImage(src, outimg, 1)
+        #outframe.send()
+        
+        #jevois.sendSerial("[[[5, 8, 10]]]")
+        
+        jevois.sendSerial("{}".format(circles))
+        self.frame += 1
 
     # ###################################################################################################
     ## Process function with USB output
@@ -80,7 +147,7 @@ class ObjectFinder:
                                minRadius=5, maxRadius=75)
         
         # Circles Are reported as (X, Y, Radius)
-        jevois.LINFO("CIRCLES: {}".format(circles))
+        #jevois.LINFO("CIRCLES: {}".format(circles))
         if outimg is not None:
             if circles is not None:
                 circles = np.uint16(np.around(circles))
@@ -102,7 +169,9 @@ class ObjectFinder:
         jevois.convertCvBGRtoRawImage(src, outimg, 1)
         outframe.send()
         
-        jevois.sendSerial("{}".format(circles))
+        jevois.sendSerial("[[[5, 8, 10]]]")
+        
+        #jevois.sendSerial("{}".format(circles))
         self.frame += 1
 
     # ###################################################################################################
