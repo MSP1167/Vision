@@ -169,9 +169,21 @@ class ObjectFinder:
         jevois.convertCvBGRtoRawImage(src, outimg, 1)
         outframe.send()
         
-        jevois.sendSerial("[[[5, 8, 10]]]")
-        
-        #jevois.sendSerial("{}".format(circles))
+        #jevois.sendSerial("[[[5, 8, 10]]]")
+        finalCircles = ""
+        if circles is not None:     
+            for circle in circles:
+                for cir in circle:
+                    finalCircles += "["
+                    for data in cir:
+                        finalCircles += str(data)
+                        finalCircles += ","
+                    finalCircles = finalCircles[:-1]
+                    finalCircles += "]"
+        else:
+            finalCircles = "None"
+
+        jevois.sendSerial("{}".format(finalCircles))
         self.frame += 1
 
     # ###################################################################################################
