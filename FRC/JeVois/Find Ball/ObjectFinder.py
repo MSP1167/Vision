@@ -170,6 +170,7 @@ class ObjectFinder:
         outframe.send()
         
         #jevois.sendSerial("[[[5, 8, 10]]]")
+        # OUTPUT: [X, Y, R][X, Y, R]
         finalCircles = ""
         if circles is not None:     
             for circle in circles:
