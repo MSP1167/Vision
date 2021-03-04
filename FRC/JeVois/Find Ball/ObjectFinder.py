@@ -28,8 +28,8 @@ class ObjectFinder:
         self.degrees = 320/90 # 320 Pixels, using a 90 Degree Camera lens
         self.widthOuterBuffer = 320*0.45
         # Define what YELLOW is
-        self.Yellow_Lower = [10, 40, 100]
-        self.Yellow_Upper = [50, 230, 255]
+        self.Yellow_Lower = [10, 80, 100]
+        self.Yellow_Upper = [50, 255, 255]
 
     # ###################################################################################################
     ## Process function with no USB output
@@ -37,13 +37,6 @@ class ObjectFinder:
         # Get the next camera image (may block until it is captured):
         inimg = inframe.get()
         jevois.LINFO("Input image is {} {}x{}".format(jevois.fccstr(inimg.fmt), inimg.width, inimg.height))
-
-        # Get the next available USB output image:
-        #outimg = outframe.get()
-        #jevois.LINFO("Output image is {} {}x{}".format(jevois.fccstr(outimg.fmt), outimg.width, outimg.height))
-
-        # Example of getting pixel data from the input and copying to the output:
-        #jevois.paste(inimg, outimg, 0, 0)
 
         # We are done with the input image:
         inframe.done()
@@ -61,7 +54,14 @@ class ObjectFinder:
         
         # Mask it
         mask = cv.inRange(hsv, lower, upper)
+
+        #Erode image to reduce edges
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, (6,6))
+        mask = cv.erode(mask, kernel)
         
+        #Dilate image to make what we have more significant
+        mask = cv.dilate(mask, kernel)
+
         # Find edges
         canny_edge = cv.Canny(mask, 100, 200)
         
@@ -73,28 +73,6 @@ class ObjectFinder:
         
         # Circles Are reported as (X, Y, Radius)
         jevois.LINFO("CIRCLES: {}".format(circles))
-        #if outimg is not None:
-            #if circles is not None:
-                #circles = np.uint16(np.around(circles))
-                #for i in circles[0, :]:
-                    #center = (i[0], i[1])
-                    # circle center
-                    #cv.circle(src, center, 1, (0, 100, 100), 3)
-                    # circle outline
-                    #radius = i[2]
-                    #cv.circle(src, center, radius, (255, 0, 255), 3)
-
-        # We are done with the output, ready to send it to host over USB:
-
-        #cv.line(src, (int(self.widthOuterBuffer), 0), (int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
-        #cv.line(src, (320 - int(self.widthOuterBuffer), 0), (320 - int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
-
-        
-
-        #jevois.convertCvBGRtoRawImage(src, outimg, 1)
-        #outframe.send()
-        
-        #jevois.sendSerial("[[[5, 8, 10]]]")
         
         # OUTPUT: [X, Y, R][X, Y, R]
         finalCircles = ""
@@ -145,6 +123,13 @@ class ObjectFinder:
         
         # Mask it
         mask = cv.inRange(hsv, lower, upper)
+
+        #Erode image to reduce edges
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, (6,6))
+        mask = cv.erode(mask, kernel)
+        
+        #Dilate image to make what we have more significant
+        mask = cv.dilate(mask, kernel)
         
         # Find edges
         canny_edge = cv.Canny(mask, 100, 200)
@@ -170,15 +155,9 @@ class ObjectFinder:
 
         # We are done with the output, ready to send it to host over USB:
 
-        cv.line(src, (int(self.widthOuterBuffer), 0), (int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
-        cv.line(src, (320 - int(self.widthOuterBuffer), 0), (320 - int(self.widthOuterBuffer), 240), (255, 0, 0), 5)
-
-        
-
         jevois.convertCvBGRtoRawImage(src, outimg, 1)
         outframe.send()
-        
-        #jevois.sendSerial("[[[5, 8, 10]]]")
+
         # OUTPUT: [X, Y, R][X, Y, R]
         finalCircles = ""
         if circles is not None:     
