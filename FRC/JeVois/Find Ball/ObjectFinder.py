@@ -27,6 +27,9 @@ class ObjectFinder:
         self.frame = 0 # a simple frame counter used to demonstrate sendSerial()
         self.degrees = 320/90 # 320 Pixels, using a 90 Degree Camera lens
         self.widthOuterBuffer = 320*0.45
+        # Define what YELLOW is
+        self.Yellow_Lower = [10, 40, 100]
+        self.Yellow_Upper = [50, 230, 255]
 
     # ###################################################################################################
     ## Process function with no USB output
@@ -44,14 +47,10 @@ class ObjectFinder:
 
         # We are done with the input image:
         inframe.done()
-
-        # Ranges For Color
-        Yellow_Lower = [10, 40, 100]
-        Yellow_Upper = [50, 230, 255]
         
         # Need to convert the dtype for openCV
-        lower = np.array(Yellow_Lower, dtype = "uint8")
-        upper = np.array(Yellow_Upper, dtype = "uint8")
+        lower = np.array(self.Yellow_Lower, dtype = "uint8")
+        upper = np.array(self.Yellow_Upper, dtype = "uint8")
         
         # Get the raw img into a workable format
         src = jevois.convertToCvBGR(inimg)
@@ -97,7 +96,21 @@ class ObjectFinder:
         
         #jevois.sendSerial("[[[5, 8, 10]]]")
         
-        jevois.sendSerial("{}".format(circles))
+        # OUTPUT: [X, Y, R][X, Y, R]
+        finalCircles = ""
+        if circles is not None:     
+            for circle in circles:
+                for cir in circle:
+                    finalCircles += "["
+                    for data in cir:
+                        finalCircles += str(data)
+                        finalCircles += ","
+                    finalCircles = finalCircles[:-1]
+                    finalCircles += "]"
+        else:
+            finalCircles = "None"
+
+        jevois.sendSerial("{}".format(finalCircles))
         self.frame += 1
 
     # ###################################################################################################
@@ -119,13 +132,9 @@ class ObjectFinder:
         # We are done with the input image:
         inframe.done()
 
-        # Ranges For Color
-        Yellow_Lower = [10, 40, 100]
-        Yellow_Upper = [50, 230, 255]
-        
         # Need to convert the dtype for openCV
-        lower = np.array(Yellow_Lower, dtype = "uint8")
-        upper = np.array(Yellow_Upper, dtype = "uint8")
+        lower = np.array(self.Yellow_Lower, dtype = "uint8")
+        upper = np.array(self.Yellow_Upper, dtype = "uint8")
         
         # Get the raw img into a workable format
         src = jevois.convertToCvBGR(inimg)
